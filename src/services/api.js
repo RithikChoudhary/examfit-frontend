@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logApiError } from '../utils/errorLogger';
 
 // Determine API base URL based on environment
 // In production, this should be set via VITE_API_BASE_URL environment variable
@@ -22,22 +23,65 @@ const api = axios.create({
   },
 });
 
+// Request interceptor - log outgoing requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  // Log request in development
+  if (!import.meta.env.PROD) {
+    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.url}`, {
+      params: config.params,
+      data: config.data,
+    });
+  }
+  
   return config;
+}, (error) => {
+  logApiError(error, { type: 'request_error' });
+  return Promise.reject(error);
 });
 
+// Response interceptor - log all errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log successful responses in development
+    if (!import.meta.env.PROD) {
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+        status: response.status,
+        data: response.data,
+      });
+    }
+    return response;
+  },
   (error) => {
+    // Log all API errors with detailed information
+    logApiError(error, {
+      type: 'response_error',
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+    });
+
+    // Handle 401 - Unauthorized
     if (error.response?.status === 401) {
+      console.warn('[API] Unauthorized - redirecting to login');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+
+    // Handle 404 - Not Found
+    if (error.response?.status === 404) {
+      console.error('[API] Resource not found:', error.config?.url);
+    }
+
+    // Handle 500 - Server Error
+    if (error.response?.status >= 500) {
+      console.error('[API] Server error:', error.response?.data);
+    }
+
     return Promise.reject(error);
   }
 );
