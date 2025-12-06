@@ -54,6 +54,12 @@ const CurrentAffairs = () => {
       }
     } catch (error) {
       console.error('Error fetching dates:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+      });
       setSelectedDate(getYesterdayDate());
     }
   };

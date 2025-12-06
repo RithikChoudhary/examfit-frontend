@@ -40,11 +40,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const response = await authAPI.login({ email, password });
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    setUser(response.data.user);
-    return response.data;
+    try {
+      console.log('[Auth] Attempting login for:', email);
+      const response = await authAPI.login({ email, password });
+      console.log('[Auth] Login successful:', response.data);
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      setUser(response.data.user);
+      return response.data;
+    } catch (error) {
+      console.error('[Auth] Login error:', error);
+      console.error('[Auth] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+      });
+      throw error;
+    }
   };
 
   const register = async (name, email, password) => {
