@@ -1,0 +1,84 @@
+# robots.txt for ExamFit
+# https://examfit.com
+# Last updated: 2025-12-06
+
+# Default rules for all crawlers
+User-agent: *
+Allow: /
+
+# Explicitly allow important public pages
+Allow: /about
+Allow: /contact
+Allow: /blog
+Allow: /current-affairs
+Allow: /study-material
+Allow: /syllabus
+Allow: /exams
+Allow: /subjects
+Allow: /question-papers
+
+# Disallow private/admin pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /test/
+Disallow: /test/*
+Disallow: /results/
+Disallow: /results/*
+
+# Disallow API endpoints (if any)
+Disallow: /api/
+Disallow: /api/*
+
+# Disallow authentication pages from indexing (optional)
+Disallow: /login
+Disallow: /register
+
+# Disallow query parameters that don't add value
+Disallow: /*?*utm_*
+Disallow: /*?*ref=*
+Disallow: /*?*source=*
+
+# Allow specific search engine crawlers with full access
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 1
+
+User-agent: Yandex
+Allow: /
+Crawl-delay: 1
+
+# Block bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+# Sitemap location
+Sitemap: https://examfit.com/sitemap.xml
+
+# Host directive (helps with canonicalization)
+Host: https://examfit.com
+

@@ -1,0 +1,41 @@
+.instagram-card {
+  @apply bg-white rounded-lg shadow-md overflow-hidden;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.instagram-card-image {
+  @apply w-full h-3/4 object-cover;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.instagram-card-content {
+  @apply p-4 flex-grow flex flex-col justify-between;
+}
+
+.instagram-card-question {
+  @apply text-sm font-medium text-gray-800 mb-2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.instagram-card-options {
+  @apply space-y-2;
+}
+
+.instagram-card-option {
+  @apply text-xs text-left font-semibold text-gray-700 bg-gray-50 p-2 rounded;
+  border-left: 3px solid #667eea;
+}
+
+.instagram-card-option.correct {
+  @apply bg-green-50 border-green-500;
+}
+
+.instagram-card-option.incorrect {
+  @apply bg-red-50 border-red-500;
+}
+

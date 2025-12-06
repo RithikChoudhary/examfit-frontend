@@ -1,0 +1,307 @@
+/* Exams Page Styles */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(249, 115, 22, 0.3); }
+  50% { border-color: rgba(249, 115, 22, 0.6); }
+}
+
+.exams-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #eff6ff 100%);
+}
+
+/* Hero Section */
+.exams-hero {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #f97316 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.exams-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Exam Cards */
+.exam-card {
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 2px solid transparent;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: fadeInUp 0.5s ease-out forwards;
+  opacity: 0;
+  position: relative;
+}
+
+.exam-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  border-color: #3b82f6;
+}
+
+.exam-card-header {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  padding: 1.25rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.exam-card-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.exam-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.exam-card:hover .exam-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Sub-exam items */
+.sub-exam-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.sub-exam-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #f97316, #ea580c);
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+}
+
+.sub-exam-item:hover::before {
+  transform: scaleY(1);
+}
+
+.sub-exam-item:hover {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: #fdba74;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
+}
+
+.sub-exam-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.sub-exam-item:hover .sub-exam-icon {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  transform: scale(1.05);
+}
+
+.sub-exam-item:hover .sub-exam-icon span {
+  filter: brightness(10);
+}
+
+/* View Subjects Button */
+.view-subjects-btn {
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-subjects-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.view-subjects-btn:hover::before {
+  left: 100%;
+}
+
+.view-subjects-btn:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+}
+
+.view-subjects-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.view-subjects-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* Loading State */
+.loading-spinner {
+  width: 64px;
+  height: 64px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Empty State */
+.empty-state {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+.empty-state-icon {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Stats Badge */
+.stats-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Back Button */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: #1d4ed8;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateX(-4px);
+}
+
+.back-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.back-btn:hover svg {
+  transform: translateX(-4px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .exams-grid {
+    grid-template-columns: 1fr;
+  }
+}
