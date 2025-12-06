@@ -9,17 +9,26 @@ const TakeTest = () => {
   const [test, setTest] = useState(null);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const autosaveIntervalRef = useRef(null);
+  
+  const QUESTIONS_PER_PAGE = 30;
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchTest();
+    setCurrentPage(1); // Reset to first page when test changes
     return () => {
       if (autosaveIntervalRef.current) {
         clearInterval(autosaveIntervalRef.current);
       }
     };
   }, [testId]);
+  
+  // Scroll to top when page changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentPage]);
 
   useEffect(() => {
     if (test && Object.keys(answers).length > 0) {
@@ -181,6 +190,12 @@ const TakeTest = () => {
 
   const totalQuestions = test.questions.length;
   const answeredCount = Object.values(answers).filter(a => a !== null && a !== undefined).length;
+  
+  // Pagination calculations
+  const totalPages = Math.ceil(totalQuestions / QUESTIONS_PER_PAGE);
+  const startIndex = (currentPage - 1) * QUESTIONS_PER_PAGE;
+  const endIndex = startIndex + QUESTIONS_PER_PAGE;
+  const currentPageQuestions = test.questions.slice(startIndex, endIndex);
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -214,9 +229,37 @@ const TakeTest = () => {
           </div>
         </div>
 
+        {/* Pagination Info */}
+        {totalPages > 1 && (
+          <div className="mb-6 bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-700">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Questions List */}
         <div className="space-y-6">
-          {test.questions.map((question, idx) => {
+          {currentPageQuestions.map((question, localIdx) => {
+            const globalIdx = startIndex + localIdx;
             const userAnswer = answers[question._id];
             const isAnswered = userAnswer !== null && userAnswer !== undefined;
             const isCorrect = isAnswered && userAnswer === question.correctIndex;
@@ -227,7 +270,7 @@ const TakeTest = () => {
                 <div className="p-6">
                   <div className="flex items-start gap-3 mb-5">
                     <div className="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-base">
-                      #{question.questionNumber || idx + 1}
+                      #{question.questionNumber || globalIdx + 1}
                     </div>
                     <div className="flex-1 pt-2">
                       <p className="text-base font-medium text-gray-800 leading-relaxed whitespace-pre-line">
@@ -243,7 +286,7 @@ const TakeTest = () => {
                         <img
                           key={mediaIdx}
                           src={url}
-                          alt={`Question ${idx + 1} media ${mediaIdx + 1}`}
+                          alt={`Question ${globalIdx + 1} media ${mediaIdx + 1}`}
                           className="max-w-full h-auto rounded-lg border border-gray-200"
                           loading="lazy"
                         />
@@ -342,6 +385,33 @@ const TakeTest = () => {
             );
           })}
         </div>
+
+        {/* Pagination at Bottom */}
+        {totalPages > 1 && (
+          <div className="mt-8 bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-700">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                >
+                  ← Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit Button at Bottom */}
         <div className="mt-8 text-center">

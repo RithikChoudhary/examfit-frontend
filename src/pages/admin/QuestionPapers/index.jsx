@@ -40,8 +40,11 @@ const AdminQuestionPapers = () => {
     exam: '',
     board: '',
     section: 'General',
+    customSection: '',
     year: '',
   });
+  
+  const [useCustomSection, setUseCustomSection] = useState(false);
 
   // Stats
   const [totalPapers, setTotalPapers] = useState(0);
@@ -144,14 +147,19 @@ const AdminQuestionPapers = () => {
   const handleOpenModal = (paper = null) => {
     if (paper) {
       setEditingPaper(paper);
+      const paperSection = paper.section || 'General';
+      const isPredefined = PREDEFINED_SECTIONS.includes(paperSection);
+      
       setFormData({
         name: paper.name,
         subject: paper.subject?._id || paper.subject || filterSubject || '',
         exam: paper.exam?._id || paper.exam || filterExam || '',
         board: paper.board?._id || paper.board || filterBoard || '',
-        section: paper.section || 'General',
+        section: isPredefined ? paperSection : 'Other',
+        customSection: isPredefined ? '' : paperSection,
         year: paper.year || '',
       });
+      setUseCustomSection(!isPredefined);
     } else {
       setEditingPaper(null);
       setFormData({
@@ -160,8 +168,10 @@ const AdminQuestionPapers = () => {
         exam: filterExam || '',
         board: filterBoard || '',
         section: 'General',
+        customSection: '',
         year: '',
       });
+      setUseCustomSection(false);
     }
     setIsModalOpen(true);
   };
@@ -175,12 +185,22 @@ const AdminQuestionPapers = () => {
     e.preventDefault();
     
     try {
+      // Use custom section if "Other" is selected, otherwise use the selected predefined section
+      const finalSection = useCustomSection && formData.section === 'Other' 
+        ? formData.customSection.trim() 
+        : formData.section;
+      
+      if (!finalSection || finalSection.trim() === '') {
+        toast.error('Please enter a section name');
+        return;
+      }
+      
       const payload = {
         name: formData.name,
         subject: formData.subject,
         exam: formData.exam,
         board: formData.board,
-        section: formData.section || 'General',
+        section: finalSection,
         year: formData.year ? parseInt(formData.year) : null,
       };
 
@@ -551,14 +571,38 @@ const AdminQuestionPapers = () => {
                 </label>
                 <select
                   value={formData.section}
-                  onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                  onChange={(e) => {
+                    const selectedValue = e.target.value;
+                    setFormData({ ...formData, section: selectedValue });
+                    setUseCustomSection(selectedValue === 'Other');
+                    if (selectedValue !== 'Other') {
+                      setFormData(prev => ({ ...prev, customSection: '' }));
+                    }
+                  }}
                   required
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {PREDEFINED_SECTIONS.map((section) => (
                     <option key={section} value={section}>{section}</option>
                   ))}
+                  <option value="Other">Other (Custom)</option>
                 </select>
+                
+                {useCustomSection && (
+                  <div className="mt-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Custom Section Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.customSection}
+                      onChange={(e) => setFormData({ ...formData, customSection: e.target.value })}
+                      required={useCustomSection}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="Enter your custom section name"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Year */}
