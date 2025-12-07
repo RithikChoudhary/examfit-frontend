@@ -77,6 +77,18 @@ const QuestionPapers = () => {
     }
   };
 
+  // Get section priority from subject's sectionPriorities
+  const getSectionPriority = (sectionName) => {
+    if (!subject?.sectionPriorities) return 999; // Default to last
+    const priorities = subject.sectionPriorities;
+    if (priorities instanceof Map) {
+      return priorities.get(sectionName) ?? 999;
+    } else if (typeof priorities === 'object' && priorities !== null) {
+      return priorities[sectionName] ?? 999;
+    }
+    return 999;
+  };
+
   // Group papers by section
   const getPapersBySection = () => {
     const grouped = {};
@@ -102,7 +114,12 @@ const QuestionPapers = () => {
   };
 
   const sectionedPapers = getPapersBySection();
-  const sectionNames = Object.keys(sectionedPapers).sort();
+  // Sort sections by priority (lower number = first)
+  const sectionNames = Object.keys(sectionedPapers).sort((a, b) => {
+    const priorityA = getSectionPriority(a);
+    const priorityB = getSectionPriority(b);
+    return priorityA - priorityB;
+  });
   const totalPapers = questionPapers.length;
 
   const getPaperIcon = (index) => paperIcons[index % paperIcons.length];
