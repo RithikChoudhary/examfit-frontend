@@ -335,37 +335,37 @@ const TakeTest = () => {
                           }}
                         >
                           <div className="flex items-center">
-                            <input
-                              type="radio"
-                              name={`question-${question._id}`}
-                              value={optionIdx}
-                              checked={isSelected}
-                              disabled={isAnswered}
-                              onChange={() => {
-                                if (!isAnswered) {
-                                  handleAnswerChange(question._id, optionIdx);
-                                }
-                              }}
-                              className="w-4 h-4 text-blue-600 focus:ring-0 mr-3.5 disabled:cursor-not-allowed"
-                            />
-                            <span className="font-medium text-gray-900 text-[15px] flex-1">
+                          <input
+                            type="radio"
+                            name={`question-${question._id}`}
+                            value={optionIdx}
+                            checked={isSelected}
+                            disabled={isAnswered}
+                            onChange={() => {
+                              if (!isAnswered) {
+                                handleAnswerChange(question._id, optionIdx);
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 focus:ring-0 mr-3.5 disabled:cursor-not-allowed"
+                          />
+                          <span className="font-medium text-gray-900 text-[15px] flex-1">
                               {String.fromCharCode(65 + optionIdx)}. {option.text}
-                            </span>
-                            {isAnswered && isCorrectOption && (
-                              <span className="text-xl ml-2 text-green-700">✓</span>
-                            )}
-                            {isAnswered && isSelected && !isCorrectOption && (
-                              <span className="text-xl ml-2 text-pink-700">✗</span>
-                            )}
+                          </span>
+                          {isAnswered && isCorrectOption && (
+                            <span className="text-xl ml-2 text-green-700">✓</span>
+                          )}
+                          {isAnswered && isSelected && !isCorrectOption && (
+                            <span className="text-xl ml-2 text-pink-700">✗</span>
+                          )}
                           </div>
                           {option.media && (
                             <div className="mt-3 ml-7">
-                              <img
-                                src={option.media}
+                            <img
+                              src={option.media}
                                 alt={`Option ${String.fromCharCode(65 + optionIdx)} image`}
                                 className="max-w-full h-auto max-h-64 rounded-lg border border-gray-200 bg-white"
-                                loading="lazy"
-                              />
+                              loading="lazy"
+                            />
                             </div>
                           )}
                         </label>

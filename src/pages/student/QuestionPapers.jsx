@@ -44,7 +44,7 @@ const QuestionPapers = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [subjectRes, examRes, boardRes, papersRes] = await Promise.all([
         axios.get(`${API_URL}/subject/${subjectId}`, { headers }),
@@ -76,7 +76,7 @@ const QuestionPapers = () => {
   const handleStartTest = async (questionPaperId) => {
     try {
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
       const response = await axios.post(
         `${API_URL}/student/tests`,

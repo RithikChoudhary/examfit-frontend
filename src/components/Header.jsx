@@ -11,7 +11,12 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    // If on admin route, redirect to login, otherwise go to home
+    if (location.pathname.startsWith('/admin')) {
+      navigate('/login');
+    } else {
+      navigate('/');
+    }
     setMobileMenuOpen(false);
   };
 
@@ -92,38 +97,36 @@ const Header = () => {
               <span>Contact</span>
             </Link>
 
-            {/* Admin Dashboard Link */}
-            {user?.role === 'admin' && (
-              <Link to="/admin" className={`nav-link ${isActive('/admin') ? 'active' : ''}`}>
-                <span className="nav-link-icon">📊</span>
-                <span>Dashboard</span>
-              </Link>
-            )}
           </nav>
 
           {/* Right Section */}
           <div className="user-section">
-            {user ? (
+            {/* Only show login/auth buttons on admin routes */}
+            {location.pathname.startsWith('/admin') && (
               <>
-                <div className="user-avatar hidden lg:flex">
-                  <div className="avatar-circle">
-                    {user.name.charAt(0).toUpperCase()}
+                {user ? (
+                  <>
+                    <div className="user-avatar hidden lg:flex">
+                      <div className="avatar-circle">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="user-name">{user.name}</span>
+                    </div>
+                    <button onClick={handleLogout} className="btn-logout hidden lg:block">
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="auth-buttons hidden lg:flex">
+                    <Link to="/login" className="btn-login">
+                      Login
+                    </Link>
+                    <Link to="/register" className="btn-get-started">
+                      Get Started
+                    </Link>
                   </div>
-                  <span className="user-name">{user.name}</span>
-                </div>
-                <button onClick={handleLogout} className="btn-logout hidden lg:block">
-                  Logout
-                </button>
+                )}
               </>
-            ) : (
-              <div className="auth-buttons hidden lg:flex">
-                <Link to="/login" className="btn-login">
-                  Login
-                </Link>
-                <Link to="/register" className="btn-get-started">
-                  Get Started
-                </Link>
-              </div>
             )}
 
             {/* Mobile Menu Button */}
@@ -196,29 +199,24 @@ const Header = () => {
             <span>Contact Us</span>
           </Link>
 
-          {user?.role === 'admin' && (
+          {/* Only show login/auth buttons on admin routes */}
+          {location.pathname.startsWith('/admin') && (
             <>
-              <div className="mobile-nav-section">Admin</div>
-              <Link to="/admin" className={`mobile-nav-link ${isActive('/admin') ? 'active' : ''}`} onClick={closeMobileMenu}>
-                <span>📊</span>
-                <span>Dashboard</span>
-              </Link>
-            </>
-          )}
-
-          {user ? (
-            <button onClick={handleLogout} className="mobile-btn-logout">
-              Logout
-            </button>
-          ) : (
-            <>
-              <Link to="/login" className="mobile-nav-link" onClick={closeMobileMenu}>
-                <span>🔐</span>
-                <span>Login</span>
-              </Link>
-              <Link to="/register" className="mobile-btn-get-started" onClick={closeMobileMenu}>
-                Get Started Free
-              </Link>
+              {user ? (
+                <button onClick={handleLogout} className="mobile-btn-logout">
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link to="/login" className="mobile-nav-link" onClick={closeMobileMenu}>
+                    <span>🔐</span>
+                    <span>Login</span>
+                  </Link>
+                  <Link to="/register" className="mobile-btn-get-started" onClick={closeMobileMenu}>
+                    Get Started Free
+                  </Link>
+                </>
+              )}
             </>
           )}
         </nav>

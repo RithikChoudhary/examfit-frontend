@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { boardsAPI } from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
 import SEO, { getOrganizationSchema, getWebsiteSchema } from '../../components/SEO';
 import './Home.css';
 
@@ -11,14 +10,7 @@ const StudentHome = () => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  const getFirstName = () => {
-    if (user && user.name) {
-      return user.name.split(' ')[0];
-    }
-    return 'Student';
-  };
+  // Removed user dependency since student routes are now public
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -169,7 +161,7 @@ const StudentHome = () => {
                 
                 <div className="unique-card-content">
                   <div className="name-display">
-                    <h1 className="first-name">{getFirstName()}</h1>
+                    <h1 className="first-name">Student</h1>
                     <p className="motivation-text">Start preparing now</p>
                   </div>
 

@@ -233,7 +233,7 @@ const AdminQuestions = () => {
       // Log full error details for debugging
       if (error.response?.data) {
         console.error('Backend error details:', error.response.data);
-      }
+    }
     }
   };
 
@@ -904,26 +904,26 @@ const AdminQuestions = () => {
                   {formData.options.map((option, index) => (
                     <div key={index} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                       <div className="flex items-center gap-3 mb-3">
-                        <input
-                          type="radio"
-                          name="correctAnswer"
-                          checked={Number(formData.correctIndex) === Number(index)}
-                          onChange={() => setFormData({ ...formData, correctIndex: Number(index) })}
-                          className="w-5 h-5 text-indigo-600"
-                        />
-                        <span className="text-sm font-medium text-gray-600 w-8">{String.fromCharCode(65 + index)}.</span>
-                        <input
-                          type="text"
-                          value={option.text}
-                          onChange={(e) => {
-                            const newOptions = [...formData.options];
+                      <input
+                        type="radio"
+                        name="correctAnswer"
+                        checked={Number(formData.correctIndex) === Number(index)}
+                        onChange={() => setFormData({ ...formData, correctIndex: Number(index) })}
+                        className="w-5 h-5 text-indigo-600"
+                      />
+                      <span className="text-sm font-medium text-gray-600 w-8">{String.fromCharCode(65 + index)}.</span>
+                      <input
+                        type="text"
+                        value={option.text}
+                        onChange={(e) => {
+                          const newOptions = [...formData.options];
                             newOptions[index] = { ...newOptions[index], text: e.target.value };
-                            setFormData({ ...formData, options: newOptions });
-                          }}
-                          required
+                          setFormData({ ...formData, options: newOptions });
+                        }}
+                        required
                           className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                           placeholder={`Option ${index + 1} text`}
-                        />
+                      />
                       </div>
                       
                       {/* Option Image */}

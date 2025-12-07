@@ -117,45 +117,27 @@ function App() {
             path="/"
             element={<StudentHome />}
           />
+          {/* Public browsing routes - no login required */}
           <Route
             path="/exams"
-            element={
-              <ProtectedRoute>
-                <StudentExams />
-              </ProtectedRoute>
-            }
+            element={<StudentExams />}
           />
           <Route
             path="/subjects"
-            element={
-              <ProtectedRoute>
-                <StudentSubjects />
-              </ProtectedRoute>
-            }
+            element={<StudentSubjects />}
           />
           <Route
             path="/question-papers"
-            element={
-              <ProtectedRoute>
-                <QuestionPapers />
-              </ProtectedRoute>
-            }
+            element={<QuestionPapers />}
           />
+          {/* Public test routes - no login required */}
           <Route
             path="/test/:testId"
-            element={
-              <ProtectedRoute>
-                <TakeTest />
-              </ProtectedRoute>
-            }
+            element={<TakeTest />}
           />
           <Route
             path="/results/:testId"
-            element={
-              <ProtectedRoute>
-                <StudentResults />
-              </ProtectedRoute>
-            }
+            element={<StudentResults />}
           />
 
           {/* Static Pages */}

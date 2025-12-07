@@ -49,7 +49,7 @@ const StudentSubjects = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       const [examRes, subjectsRes] = await Promise.all([
         axios.get(`${API_URL}/exams/${examId}`, { headers }),
