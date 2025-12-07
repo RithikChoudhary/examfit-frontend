@@ -46,7 +46,15 @@ const QuestionPapers = () => {
         axios.get(`${API_URL}/question-papers?subjectId=${subjectId}`, { headers }),
       ]);
 
-      setSubject(subjectRes.data);
+      const subjectData = subjectRes.data;
+      setSubject(subjectData);
+      
+      // Debug: Log subject data to verify sectionPriorities are loaded
+      console.log('📋 Subject loaded:', subjectData?.name);
+      console.log('📋 Section Priorities:', subjectData?.sectionPriorities);
+      console.log('📋 Section Priorities type:', typeof subjectData?.sectionPriorities);
+      console.log('📋 Section Priorities keys:', subjectData?.sectionPriorities ? Object.keys(subjectData.sectionPriorities) : 'none');
+      
       setExam(examRes.data.exam || examRes.data);
       setBoard(boardRes.data.board || boardRes.data);
       setQuestionPapers(Array.isArray(papersRes.data) ? papersRes.data : []);
@@ -79,14 +87,44 @@ const QuestionPapers = () => {
 
   // Get section priority from subject's sectionPriorities
   const getSectionPriority = (sectionName) => {
-    if (!subject?.sectionPriorities) return 999; // Default to last
-    const priorities = subject.sectionPriorities;
-    if (priorities instanceof Map) {
-      return priorities.get(sectionName) ?? 999;
-    } else if (typeof priorities === 'object' && priorities !== null) {
-      return priorities[sectionName] ?? 999;
+    if (!subject?.sectionPriorities) {
+      return 999; // Default to last
     }
-    return 999;
+    
+    const priorities = subject.sectionPriorities;
+    const normalizedSection = sectionName.trim();
+    
+    // Handle Map type
+    if (priorities instanceof Map) {
+      // Try exact match
+      if (priorities.has(normalizedSection)) {
+        return Number(priorities.get(normalizedSection)) || 999;
+      }
+      // Try case-insensitive match
+      for (const [key, value] of priorities.entries()) {
+        if (key.trim().toLowerCase() === normalizedSection.toLowerCase()) {
+          return Number(value) || 999;
+        }
+      }
+      return 999;
+    }
+    
+    // Handle object type (most common after JSON serialization)
+    if (typeof priorities === 'object' && priorities !== null) {
+      // Try exact match first
+      if (priorities[normalizedSection] !== undefined && priorities[normalizedSection] !== null) {
+        return Number(priorities[normalizedSection]) || 999;
+      }
+      // Try case-insensitive match
+      const lowerSection = normalizedSection.toLowerCase();
+      for (const [key, value] of Object.entries(priorities)) {
+        if (key.trim().toLowerCase() === lowerSection) {
+          return Number(value) || 999;
+        }
+      }
+    }
+    
+    return 999; // Default to last
   };
 
   // Group papers by section
@@ -114,12 +152,29 @@ const QuestionPapers = () => {
   };
 
   const sectionedPapers = getPapersBySection();
+  
+  // Debug: Log all sections and their priorities
+  const allSections = Object.keys(sectionedPapers);
+  console.log('🔍 All sections found:', allSections);
+  allSections.forEach(section => {
+    const priority = getSectionPriority(section);
+    console.log(`  - "${section}": priority = ${priority}`);
+  });
+  console.log('🔍 Subject sectionPriorities:', subject?.sectionPriorities);
+  
   // Sort sections by priority (lower number = first)
   const sectionNames = Object.keys(sectionedPapers).sort((a, b) => {
     const priorityA = getSectionPriority(a);
     const priorityB = getSectionPriority(b);
+    console.log(`🔀 Sorting: "${a}" (${priorityA}) vs "${b}" (${priorityB})`);
+    // If priorities are equal, maintain alphabetical order
+    if (priorityA === priorityB) {
+      return a.localeCompare(b);
+    }
     return priorityA - priorityB;
   });
+  
+  console.log('✅ Final section order:', sectionNames);
   const totalPapers = questionPapers.length;
 
   const getPaperIcon = (index) => paperIcons[index % paperIcons.length];

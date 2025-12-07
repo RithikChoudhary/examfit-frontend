@@ -321,7 +321,7 @@ const TakeTest = () => {
                       return (
                         <label
                           key={optionIdx}
-                          className={`flex items-center p-3.5 border-2 rounded-xl transition-all ${optionClasses} ${
+                          className={`flex flex-col p-3.5 border-2 rounded-xl transition-all ${optionClasses} ${
                             isAnswered 
                               ? 'cursor-not-allowed opacity-90' 
                               : 'cursor-pointer hover:border-blue-600 hover:bg-blue-50'
@@ -334,35 +334,39 @@ const TakeTest = () => {
                             }
                           }}
                         >
-                          <input
-                            type="radio"
-                            name={`question-${question._id}`}
-                            value={optionIdx}
-                            checked={isSelected}
-                            disabled={isAnswered}
-                            onChange={() => {
-                              if (!isAnswered) {
-                                handleAnswerChange(question._id, optionIdx);
-                              }
-                            }}
-                            className="w-4 h-4 text-blue-600 focus:ring-0 mr-3.5 disabled:cursor-not-allowed"
-                          />
-                          <span className="font-medium text-gray-900 text-[15px] flex-1">
-                            {option.text}
-                          </span>
-                          {isAnswered && isCorrectOption && (
-                            <span className="text-xl ml-2 text-green-700">✓</span>
-                          )}
-                          {isAnswered && isSelected && !isCorrectOption && (
-                            <span className="text-xl ml-2 text-pink-700">✗</span>
-                          )}
-                          {option.media && (
-                            <img
-                              src={option.media}
-                              alt={`Option ${optionIdx + 1}`}
-                              className="mt-2 max-w-full h-auto rounded-lg ml-7 border border-gray-200"
-                              loading="lazy"
+                          <div className="flex items-center">
+                            <input
+                              type="radio"
+                              name={`question-${question._id}`}
+                              value={optionIdx}
+                              checked={isSelected}
+                              disabled={isAnswered}
+                              onChange={() => {
+                                if (!isAnswered) {
+                                  handleAnswerChange(question._id, optionIdx);
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 focus:ring-0 mr-3.5 disabled:cursor-not-allowed"
                             />
+                            <span className="font-medium text-gray-900 text-[15px] flex-1">
+                              {String.fromCharCode(65 + optionIdx)}. {option.text}
+                            </span>
+                            {isAnswered && isCorrectOption && (
+                              <span className="text-xl ml-2 text-green-700">✓</span>
+                            )}
+                            {isAnswered && isSelected && !isCorrectOption && (
+                              <span className="text-xl ml-2 text-pink-700">✗</span>
+                            )}
+                          </div>
+                          {option.media && (
+                            <div className="mt-3 ml-7">
+                              <img
+                                src={option.media}
+                                alt={`Option ${String.fromCharCode(65 + optionIdx)} image`}
+                                className="max-w-full h-auto max-h-64 rounded-lg border border-gray-200 bg-white"
+                                loading="lazy"
+                              />
+                            </div>
                           )}
                         </label>
                       );

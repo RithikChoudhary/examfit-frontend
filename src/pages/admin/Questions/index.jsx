@@ -33,7 +33,7 @@ const AdminQuestions = () => {
   
   const [formData, setFormData] = useState({
     text: '',
-    options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
+    options: [{ text: '', media: '' }, { text: '', media: '' }, { text: '', media: '' }, { text: '', media: '' }],
     correctIndex: 0,
     explanation: '',
     board: '',
@@ -42,6 +42,7 @@ const AdminQuestions = () => {
     questionPaper: '',
     difficulty: 'medium',
     status: 'published',
+    media: [], // Array of base64 image strings for question images
   });
 
   // Bulk upload state
@@ -124,9 +125,18 @@ const AdminQuestions = () => {
       const correctIdx = question.correctIndex !== undefined && question.correctIndex !== null 
         ? Number(question.correctIndex) 
         : 0;
+      // Ensure options have media field
+      const optionsWithMedia = (question.options || [{ text: '' }, { text: '' }, { text: '' }, { text: '' }]).map(opt => ({
+        text: opt.text || '',
+        media: opt.media || '',
+      }));
+      // Pad to 4 options if needed
+      while (optionsWithMedia.length < 4) {
+        optionsWithMedia.push({ text: '', media: '' });
+      }
       setFormData({
         text: question.text,
-        options: question.options || [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
+        options: optionsWithMedia,
         correctIndex: correctIdx,
         explanation: question.explanation || '',
         board: filterBoard || '',
@@ -135,12 +145,13 @@ const AdminQuestions = () => {
         questionPaper: filterQuestionPaper || '',
         difficulty: question.difficulty || 'medium',
         status: question.status || 'published',
+        media: question.media || [],
       });
     } else {
       setEditingQuestion(null);
       setFormData({
         text: '',
-        options: [{ text: '' }, { text: '' }, { text: '' }, { text: '' }],
+        options: [{ text: '', media: '' }, { text: '', media: '' }, { text: '', media: '' }, { text: '', media: '' }],
         correctIndex: 0,
         explanation: '',
         board: filterBoard || '',
@@ -149,6 +160,7 @@ const AdminQuestions = () => {
         questionPaper: filterQuestionPaper || '',
         difficulty: 'medium',
         status: 'published',
+        media: [],
       });
     }
     setIsModalOpen(true);
@@ -164,17 +176,36 @@ const AdminQuestions = () => {
     
     try {
       const headers = getAuthHeaders();
+      
+      // Clean up options - remove empty media strings
+      const cleanedOptions = formData.options.map(opt => ({
+        text: opt.text,
+        media: (opt.media && opt.media.trim() !== '') ? opt.media : null,
+      }));
+      
+      // Clean up media array - remove empty strings and null values
+      const cleanedMedia = formData.media
+        .filter(img => img && img.trim() !== '')
+        .map(img => img.trim());
+      
       const payload = {
         text: formData.text,
-        options: formData.options,
+        options: cleanedOptions,
         correctIndex: formData.correctIndex,
-        explanation: formData.explanation,
+        explanation: formData.explanation || '',
         questionPaper: formData.questionPaper,
         subject: formData.subject,
         exam: formData.exam,
         difficulty: formData.difficulty,
         status: formData.status,
+        media: cleanedMedia.length > 0 ? cleanedMedia : [], // Ensure it's an array
       };
+
+      console.log('Submitting question payload:', {
+        ...payload,
+        options: payload.options.map(opt => ({ text: opt.text, hasMedia: !!opt.media })),
+        mediaCount: payload.media.length,
+      });
 
       if (editingQuestion) {
         await axios.patch(`${API_URL}/questions/${editingQuestion._id}`, payload, { headers });
@@ -189,8 +220,100 @@ const AdminQuestions = () => {
       fetchInitialData(); // Refresh stats
     } catch (error) {
       console.error('Error saving question:', error);
-      toast.error(error.response?.data?.message || 'Failed to save question');
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to save question';
+      toast.error(errorMessage);
+      
+      // Log full error details for debugging
+      if (error.response?.data) {
+        console.error('Backend error details:', error.response.data);
+      }
     }
+  };
+
+  // Convert image file to base64
+  const handleImageUpload = (file, type, index = null) => {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        reject(new Error('No file selected'));
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('Please select an image file'));
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        reject(new Error('Image size must be less than 5MB'));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64String = e.target.result;
+        resolve(base64String);
+      };
+      reader.onerror = () => reject(new Error('Failed to read image'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Handle question image upload
+  const handleQuestionImageUpload = async (e, index = null) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await handleImageUpload(file);
+      
+      if (index !== null) {
+        // Update existing image at index
+        const newMedia = [...formData.media];
+        newMedia[index] = base64;
+        setFormData({ ...formData, media: newMedia });
+      } else {
+        // Add new image
+        setFormData({ ...formData, media: [...formData.media, base64] });
+      }
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload image');
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
+  // Handle option image upload
+  const handleOptionImageUpload = async (e, optionIndex) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await handleImageUpload(file);
+      const newOptions = [...formData.options];
+      newOptions[optionIndex] = { ...newOptions[optionIndex], media: base64 };
+      setFormData({ ...formData, options: newOptions });
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload image');
+    }
+    // Reset input
+    e.target.value = '';
+  };
+
+  // Remove question image
+  const handleRemoveQuestionImage = (index) => {
+    const newMedia = formData.media.filter((_, i) => i !== index);
+    setFormData({ ...formData, media: newMedia });
+  };
+
+  // Remove option image
+  const handleRemoveOptionImage = (optionIndex) => {
+    const newOptions = [...formData.options];
+    newOptions[optionIndex] = { ...newOptions[optionIndex], media: '' };
+    setFormData({ ...formData, options: newOptions });
   };
 
   const handleDelete = async (id) => {
@@ -551,6 +674,21 @@ const AdminQuestions = () => {
                             </span>
                           </div>
                           <p className="text-gray-900 font-medium mb-3 whitespace-pre-line">{question.text}</p>
+                          
+                          {/* Question Images */}
+                          {question.media && question.media.length > 0 && (
+                            <div className="mb-3 space-y-2">
+                              {question.media.map((image, imgIdx) => (
+                                <img
+                                  key={imgIdx}
+                                  src={image}
+                                  alt={`Question image ${imgIdx + 1}`}
+                                  className="max-w-full h-auto max-h-48 rounded-lg border border-gray-200"
+                                />
+                              ))}
+                            </div>
+                          )}
+                          
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             {question.options.map((option, optIndex) => (
                               <div
@@ -561,7 +699,19 @@ const AdminQuestions = () => {
                                     : 'bg-gray-50 text-gray-600'
                                 }`}
                               >
-                                {String.fromCharCode(65 + optIndex)}. {option.text}
+                                <div className="flex items-start gap-2">
+                                  <span>{String.fromCharCode(65 + optIndex)}.</span>
+                                  <div className="flex-1">
+                                    <span>{option.text}</span>
+                                    {option.media && (
+                                      <img
+                                        src={option.media}
+                                        alt={`Option ${String.fromCharCode(65 + optIndex)} image`}
+                                        className="mt-2 max-w-full h-auto max-h-32 rounded border border-gray-200"
+                                      />
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -687,32 +837,132 @@ const AdminQuestions = () => {
                 />
               </div>
 
+              {/* Question Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Question Images
+                  <span className="text-xs text-gray-500 ml-2">(Optional - Max 5MB per image)</span>
+                </label>
+                <div className="space-y-3">
+                  {/* Existing Images */}
+                  {formData.media.map((image, index) => (
+                    <div key={index} className="relative border border-gray-200 rounded-xl p-3 bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={image} 
+                          alt={`Question image ${index + 1}`}
+                          className="w-24 h-24 object-contain rounded-lg border border-gray-200"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-600">Image {index + 1}</p>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveQuestionImage(index)}
+                            className="mt-2 text-sm text-red-600 hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <label className="cursor-pointer px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm">
+                          Replace
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleQuestionImageUpload(e, index)}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Add New Image Button */}
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border-2 border-dashed border-gray-300 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-sm text-gray-600">
+                    <Upload size={18} />
+                    Add Question Image
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleQuestionImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
               {/* Options */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Options *</label>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {formData.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="correctAnswer"
-                        checked={Number(formData.correctIndex) === Number(index)}
-                        onChange={() => setFormData({ ...formData, correctIndex: Number(index) })}
-                        className="w-5 h-5 text-indigo-600"
-                      />
-                      <span className="text-sm font-medium text-gray-600 w-8">{String.fromCharCode(65 + index)}.</span>
-                      <input
-                        type="text"
-                        value={option.text}
-                        onChange={(e) => {
-                          const newOptions = [...formData.options];
-                          newOptions[index] = { text: e.target.value };
-                          setFormData({ ...formData, options: newOptions });
-                        }}
-                        required
-                        className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder={`Option ${index + 1}`}
-                      />
+                    <div key={index} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                      <div className="flex items-center gap-3 mb-3">
+                        <input
+                          type="radio"
+                          name="correctAnswer"
+                          checked={Number(formData.correctIndex) === Number(index)}
+                          onChange={() => setFormData({ ...formData, correctIndex: Number(index) })}
+                          className="w-5 h-5 text-indigo-600"
+                        />
+                        <span className="text-sm font-medium text-gray-600 w-8">{String.fromCharCode(65 + index)}.</span>
+                        <input
+                          type="text"
+                          value={option.text}
+                          onChange={(e) => {
+                            const newOptions = [...formData.options];
+                            newOptions[index] = { ...newOptions[index], text: e.target.value };
+                            setFormData({ ...formData, options: newOptions });
+                          }}
+                          required
+                          className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                          placeholder={`Option ${index + 1} text`}
+                        />
+                      </div>
+                      
+                      {/* Option Image */}
+                      <div className="ml-8">
+                        {option.media ? (
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={option.media} 
+                              alt={`Option ${String.fromCharCode(65 + index)} image`}
+                              className="w-24 h-24 object-contain rounded-lg border border-gray-200 bg-white"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-600">Option {String.fromCharCode(65 + index)} Image</p>
+                              <div className="flex gap-2 mt-2">
+                                <label className="cursor-pointer px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-xs">
+                                  Replace
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleOptionImageUpload(e, index)}
+                                    className="hidden"
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveOptionImage(index)}
+                                  className="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-xs text-gray-600">
+                            <Upload size={14} />
+                            Add Image to Option {String.fromCharCode(65 + index)}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleOptionImageUpload(e, index)}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
