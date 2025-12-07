@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Search, FileText, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, FileText, Filter, Settings } from 'lucide-react';
 import { questionPapersAPI } from '../../../api/questionPapers';
 import { subjectsAPI } from '../../../api/subjects';
 import { examsAPI, boardsAPI } from '../../../services/api';
@@ -23,11 +23,13 @@ const AdminQuestionPapers = () => {
   const [subjects, setSubjects] = useState([]);
   const [exams, setExams] = useState([]);
   const [boards, setBoards] = useState([]);
+  const [selectedSubjectData, setSelectedSubjectData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [papersLoading, setPapersLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPaper, setEditingPaper] = useState(null);
+  const [editingSectionPriority, setEditingSectionPriority] = useState(null);
   
   // Filter states
   const [filterBoard, setFilterBoard] = useState('');
@@ -95,8 +97,15 @@ const AdminQuestionPapers = () => {
     
     try {
       setPapersLoading(true);
-      const response = await questionPapersAPI.getAll({ subjectId: filterSubject });
-      setQuestionPapers(Array.isArray(response.data) ? response.data : response.data.questionPapers || []);
+      const [papersResponse, subjectResponse] = await Promise.all([
+        questionPapersAPI.getAll({ subjectId: filterSubject }),
+        subjectsAPI.getById(filterSubject),
+      ]);
+      setQuestionPapers(Array.isArray(papersResponse.data) ? papersResponse.data : papersResponse.data.questionPapers || []);
+      
+      // Store subject data with sectionPriorities
+      const subjectData = subjectResponse.data;
+      setSelectedSubjectData(subjectData);
     } catch (error) {
       console.error('Error fetching papers:', error);
       toast.error('Failed to fetch papers');
@@ -114,6 +123,19 @@ const AdminQuestionPapers = () => {
   const getFilteredSubjects = (examId) => {
     if (!examId) return [];
     return subjects.filter(s => String(s.exam?._id || s.exam) === examId);
+  };
+
+  // Get section priority from subject's sectionPriorities
+  const getSectionPriority = (sectionName) => {
+    if (!selectedSubjectData?.sectionPriorities) return 0; // Default to 0
+    // Convert Map to object if needed, or handle as object
+    const priorities = selectedSubjectData.sectionPriorities;
+    if (priorities instanceof Map) {
+      return priorities.get(sectionName) ?? 0;
+    } else if (typeof priorities === 'object' && priorities !== null) {
+      return priorities[sectionName] ?? 0;
+    }
+    return 0;
   };
 
   // Group papers by section
@@ -141,7 +163,20 @@ const AdminQuestionPapers = () => {
       });
     });
 
-    return grouped;
+    // Sort sections by priority
+    const sortedSections = Object.keys(grouped).sort((a, b) => {
+      const priorityA = getSectionPriority(a);
+      const priorityB = getSectionPriority(b);
+      return priorityA - priorityB;
+    });
+
+    // Create new object with sorted sections
+    const sortedGrouped = {};
+    sortedSections.forEach(section => {
+      sortedGrouped[section] = grouped[section];
+    });
+
+    return sortedGrouped;
   };
 
   const handleOpenModal = (paper = null) => {
@@ -245,6 +280,38 @@ const AdminQuestionPapers = () => {
   const getFormFilteredSubjects = () => {
     if (!formData.exam) return [];
     return subjects.filter(s => String(s.exam?._id || s.exam) === formData.exam);
+  };
+
+  const handleUpdateSectionPriority = async (sectionName, priority) => {
+    if (!selectedSubjectData || !filterSubject) return;
+    
+    try {
+      // Convert sectionPriorities to object if it's a Map
+      let sectionPriorities = {};
+      if (selectedSubjectData.sectionPriorities instanceof Map) {
+        selectedSubjectData.sectionPriorities.forEach((value, key) => {
+          sectionPriorities[key] = value;
+        });
+      } else if (typeof selectedSubjectData.sectionPriorities === 'object' && selectedSubjectData.sectionPriorities !== null) {
+        sectionPriorities = { ...selectedSubjectData.sectionPriorities };
+      }
+
+      // Update the priority for this section
+      sectionPriorities[sectionName] = parseInt(priority) || 0;
+
+      // Update the subject
+      await subjectsAPI.update(filterSubject, { sectionPriorities });
+      
+      // Refresh the subject data
+      const subjectResponse = await subjectsAPI.getById(filterSubject);
+      setSelectedSubjectData(subjectResponse.data);
+      
+      toast.success('Section priority updated successfully');
+      setEditingSectionPriority(null);
+    } catch (error) {
+      console.error('Error updating section priority:', error);
+      toast.error('Failed to update section priority');
+    }
   };
 
   const groupedPapers = getGroupedPapers();
@@ -437,6 +504,39 @@ const AdminQuestionPapers = () => {
                         <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-600 rounded-full">
                           {papers.length} papers
                         </span>
+                        {editingSectionPriority === section ? (
+                          <div className="flex items-center gap-2 ml-auto">
+                            <input
+                              type="number"
+                              defaultValue={getSectionPriority(section)}
+                              onBlur={(e) => {
+                                const newPriority = parseInt(e.target.value) || 0;
+                                handleUpdateSectionPriority(section, newPriority);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const newPriority = parseInt(e.target.value) || 0;
+                                  handleUpdateSectionPriority(section, newPriority);
+                                } else if (e.key === 'Escape') {
+                                  setEditingSectionPriority(null);
+                                }
+                              }}
+                              className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                              autoFocus
+                              min="0"
+                            />
+                            <span className="text-xs text-gray-500">Priority</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setEditingSectionPriority(section)}
+                            className="ml-auto flex items-center gap-1 px-2 py-1 text-xs text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                            title="Edit section priority"
+                          >
+                            <Settings size={14} />
+                            <span>Priority: {getSectionPriority(section)}</span>
+                          </button>
+                        )}
                       </div>
                       
                       {/* Papers Grid */}
