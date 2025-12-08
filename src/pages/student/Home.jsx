@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { boardsAPI } from '../../services/api';
 import SEO, { getOrganizationSchema, getWebsiteSchema } from '../../components/SEO';
@@ -10,14 +10,13 @@ const StudentHome = () => {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  // Removed user dependency since student routes are now public
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchBoards();
   }, []);
 
-  const fetchBoards = async () => {
+  const fetchBoards = useCallback(async () => {
     try {
       setLoading(true);
       const response = await boardsAPI.getAll();
@@ -27,25 +26,17 @@ const StudentHome = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleBoardClick = (board) => {
+  const handleBoardClick = useCallback((board) => {
     navigate(`/exams?board=${board._id}`);
-  };
+  }, [navigate]);
 
-  const getBoardIcon = (index) => boardIcons[index % boardIcons.length];
+  const getBoardIcon = useCallback((index) => boardIcons[index % boardIcons.length], []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
-        <div className="loading-spinner mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
-  }
-
-  // Enhanced structured data for home page
-  const homeStructuredData = [
+  // Memoize structured data to avoid recalculating on every render
+  // MUST be called before any early returns (Rules of Hooks)
+  const homeStructuredData = useMemo(() => [
     getOrganizationSchema(),
     getWebsiteSchema(),
     {
@@ -64,7 +55,16 @@ const StudentHome = () => {
         }
       }))
     }
-  ];
+  ], [boards]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-orange-50">
+        <div className="loading-spinner mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <main className="home-page-split" role="main">
@@ -141,7 +141,18 @@ const StudentHome = () => {
                           }
                         }}
                       >
-                        <div className="board-item-icon" aria-hidden="true">{getBoardIcon(idx)}</div>
+                        {board.name.toLowerCase() === 'upsc' ? (
+                          <img 
+                            src="/upsc.webp" 
+                            alt="UPSC Logo" 
+                            className="board-item-logo"
+                            loading="lazy"
+                            width="60"
+                            height="60"
+                          />
+                        ) : (
+                          <div className="board-item-icon" aria-hidden="true">{getBoardIcon(idx)}</div>
+                        )}
                         <h3 className="board-item-name">{board.name}</h3>
                       </article>
                     ))}
