@@ -12,8 +12,9 @@ const StudentHome = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
     fetchBoards();
+    // Scroll after a small delay to avoid blocking render
+    setTimeout(() => window.scrollTo(0, 0), 0);
   }, []);
 
   const fetchBoards = useCallback(async () => {
@@ -142,16 +143,20 @@ const StudentHome = () => {
                         }}
                       >
                         {board.name.toLowerCase() === 'upsc' ? (
-                          <img 
-                            src="/upsc.webp" 
-                            alt="UPSC Logo" 
-                            className="board-item-logo"
-                            loading="lazy"
-                            width="60"
-                            height="60"
-                          />
+                          <div className="board-icon-wrapper">
+                            <img 
+                              src="/upsc.webp" 
+                              alt="UPSC Logo" 
+                              className="board-item-logo"
+                              loading="lazy"
+                              width="48"
+                              height="48"
+                            />
+                          </div>
                         ) : (
-                          <div className="board-item-icon" aria-hidden="true">{getBoardIcon(idx)}</div>
+                          <div className="board-icon-wrapper">
+                            <span className="board-item-icon" aria-hidden="true">{getBoardIcon(idx)}</span>
+                          </div>
                         )}
                         <h3 className="board-item-name">{board.name}</h3>
                       </article>
