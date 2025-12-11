@@ -5,10 +5,13 @@ import { logApiError } from '../utils/errorLogger';
 import { getApiBaseUrl } from '../utils/apiConfig';
 const API_BASE_URL = getApiBaseUrl();
 
-// Log API base URL on initialization
-console.log('[API] Base URL:', API_BASE_URL);
-console.log('[API] Environment:', import.meta.env.PROD ? 'production' : 'development');
-console.log('[API] VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'not set');
+// Log API base URL on initialization (only in development)
+if (!import.meta.env.PROD && typeof window !== 'undefined') {
+  console.log('[API] Base URL:', API_BASE_URL);
+  console.log('[API] Hostname:', window.location.hostname);
+  console.log('[API] Environment:', import.meta.env.PROD ? 'production' : 'development');
+  console.log('[API] VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL || 'not set');
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
