@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ChevronRight, ArrowLeft, Calendar } from 'lucide-react';
 import axios from 'axios';
@@ -16,7 +16,8 @@ const QuestionPapers = () => {
   const [exam, setExam] = useState(null);
   const [board, setBoard] = useState(null);
   const [questionPapers, setQuestionPapers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingPapers, setLoadingPapers] = useState(true);
+  const [loadingMeta, setLoadingMeta] = useState(true);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -35,36 +36,33 @@ const QuestionPapers = () => {
     fetchData();
   }, [subjectId, examId, boardId]);
 
+  // Progressive loading: Load metadata first, then papers
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    const token = localStorage.getItem('token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const [subjectRes, examRes, boardRes, papersRes] = await Promise.all([
+    try {
+      // First, load metadata (subject, exam, board) - show hero immediately
+      const [subjectRes, examRes, boardRes] = await Promise.all([
         axios.get(`${API_URL}/subject/${subjectId}`, { headers }),
         axios.get(`${API_URL}/exams/${examId}`, { headers }),
         axios.get(`${API_URL}/boards/${boardId}`, { headers }),
-        axios.get(`${API_URL}/question-papers?subjectId=${subjectId}`, { headers }),
       ]);
 
-      const subjectData = subjectRes.data;
-      setSubject(subjectData);
-      
-      // Debug: Log subject data to verify sectionPriorities are loaded
-      console.log('📋 Subject loaded:', subjectData?.name);
-      console.log('📋 Section Priorities:', subjectData?.sectionPriorities);
-      console.log('📋 Section Priorities type:', typeof subjectData?.sectionPriorities);
-      console.log('📋 Section Priorities keys:', subjectData?.sectionPriorities ? Object.keys(subjectData.sectionPriorities) : 'none');
-      
+      setSubject(subjectRes.data);
       setExam(examRes.data.exam || examRes.data);
       setBoard(boardRes.data.board || boardRes.data);
+      setLoadingMeta(false);
+
+      // Then load question papers separately
+      const papersRes = await axios.get(`${API_URL}/question-papers?subjectId=${subjectId}`, { headers });
       setQuestionPapers(Array.isArray(papersRes.data) ? papersRes.data : []);
+      setLoadingPapers(false);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('Failed to load data');
-    } finally {
-      setLoading(false);
+      setLoadingMeta(false);
+      setLoadingPapers(false);
     }
   };
 
@@ -87,50 +85,37 @@ const QuestionPapers = () => {
     }
   };
 
-  // Get section priority from subject's sectionPriorities
-  const getSectionPriority = (sectionName) => {
-    if (!subject?.sectionPriorities) {
-      return 999; // Default to last
-    }
+  // Memoized: Get section priority from subject's sectionPriorities
+  const getSectionPriority = useCallback((sectionName, priorities) => {
+    if (!priorities) return 999;
     
-    const priorities = subject.sectionPriorities;
-    const normalizedSection = sectionName.trim();
-    
-    // Handle Map type
-    if (priorities instanceof Map) {
-      // Try exact match
-      if (priorities.has(normalizedSection)) {
-        return Number(priorities.get(normalizedSection)) || 999;
-      }
-      // Try case-insensitive match
-      for (const [key, value] of priorities.entries()) {
-        if (key.trim().toLowerCase() === normalizedSection.toLowerCase()) {
-          return Number(value) || 999;
-        }
-      }
-      return 999;
-    }
+    const normalizedSection = sectionName.trim().toLowerCase();
     
     // Handle object type (most common after JSON serialization)
     if (typeof priorities === 'object' && priorities !== null) {
       // Try exact match first
-      if (priorities[normalizedSection] !== undefined && priorities[normalizedSection] !== null) {
-        return Number(priorities[normalizedSection]) || 999;
+      const exactMatch = priorities[sectionName.trim()];
+      if (exactMatch !== undefined && exactMatch !== null) {
+        return Number(exactMatch) || 999;
       }
       // Try case-insensitive match
-      const lowerSection = normalizedSection.toLowerCase();
       for (const [key, value] of Object.entries(priorities)) {
-        if (key.trim().toLowerCase() === lowerSection) {
+        if (key.trim().toLowerCase() === normalizedSection) {
           return Number(value) || 999;
         }
       }
     }
     
     return 999; // Default to last
-  };
+  }, []);
 
-  // Group papers by section
-  const getPapersBySection = () => {
+  // Memoized: Group and sort papers by section
+  const { sectionedPapers, sectionNames, totalPapers } = useMemo(() => {
+    if (!questionPapers.length) {
+      return { sectionedPapers: {}, sectionNames: [], totalPapers: 0 };
+    }
+
+    // Group papers by section
     const grouped = {};
     questionPapers.forEach(paper => {
       const section = paper.section || 'General';
@@ -150,46 +135,28 @@ const QuestionPapers = () => {
       });
     });
     
-    return grouped;
-  };
+    // Sort sections by priority (lower number = first)
+    const priorities = subject?.sectionPriorities;
+    const sortedSections = Object.keys(grouped).sort((a, b) => {
+      const priorityA = getSectionPriority(a, priorities);
+      const priorityB = getSectionPriority(b, priorities);
+      // If priorities are equal, maintain alphabetical order
+      if (priorityA === priorityB) {
+        return a.localeCompare(b);
+      }
+      return priorityA - priorityB;
+    });
+    
+    return {
+      sectionedPapers: grouped,
+      sectionNames: sortedSections,
+      totalPapers: questionPapers.length
+    };
+  }, [questionPapers, subject?.sectionPriorities, getSectionPriority]);
 
-  const sectionedPapers = getPapersBySection();
-  
-  // Debug: Log all sections and their priorities
-  const allSections = Object.keys(sectionedPapers);
-  console.log('🔍 All sections found:', allSections);
-  allSections.forEach(section => {
-    const priority = getSectionPriority(section);
-    console.log(`  - "${section}": priority = ${priority}`);
-  });
-  console.log('🔍 Subject sectionPriorities:', subject?.sectionPriorities);
-  
-  // Sort sections by priority (lower number = first)
-  const sectionNames = Object.keys(sectionedPapers).sort((a, b) => {
-    const priorityA = getSectionPriority(a);
-    const priorityB = getSectionPriority(b);
-    console.log(`🔀 Sorting: "${a}" (${priorityA}) vs "${b}" (${priorityB})`);
-    // If priorities are equal, maintain alphabetical order
-    if (priorityA === priorityB) {
-      return a.localeCompare(b);
-    }
-    return priorityA - priorityB;
-  });
-  
-  console.log('✅ Final section order:', sectionNames);
-  const totalPapers = questionPapers.length;
+  const getPaperIcon = useCallback((index) => paperIcons[index % paperIcons.length], []);
 
-  const getPaperIcon = (index) => paperIcons[index % paperIcons.length];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-        <div className="loading-spinner mb-4"></div>
-        <p className="text-gray-600 font-medium text-lg">Loading question papers...</p>
-      </div>
-    );
-  }
-
+  // Show hero section immediately with metadata, even if papers are still loading
   const subjectName = subject?.name || 'Subject';
   const subjectIcon = subject?.icon || '📚';
   const examName = exam?.title || exam?.name || 'Exam';
@@ -236,11 +203,11 @@ const QuestionPapers = () => {
             {/* Stats */}
             <div className="flex gap-4">
               <div className="bg-white/15 backdrop-blur-sm rounded-xl px-6 py-4 text-center min-w-[100px]">
-                <p className="text-4xl font-bold">{sectionNames.length}</p>
+                <p className="text-4xl font-bold">{loadingPapers ? '...' : sectionNames.length}</p>
                 <p className="text-white/70 text-sm mt-1">Sections</p>
               </div>
               <div className="bg-white/15 backdrop-blur-sm rounded-xl px-6 py-4 text-center min-w-[100px]">
-                <p className="text-4xl font-bold">{totalPapers}</p>
+                <p className="text-4xl font-bold">{loadingPapers ? '...' : totalPapers}</p>
                 <p className="text-white/70 text-sm mt-1">Papers</p>
               </div>
             </div>
@@ -250,7 +217,12 @@ const QuestionPapers = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-10">
-        {sectionNames.length > 0 ? (
+        {loadingPapers ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="loading-spinner mb-4"></div>
+            <p className="text-gray-600 font-medium text-lg">Loading question papers...</p>
+          </div>
+        ) : sectionNames.length > 0 ? (
           <>
             {/* Section Header */}
             <div className="flex items-center justify-between mb-8">
