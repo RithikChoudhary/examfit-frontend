@@ -48,7 +48,7 @@ const Blog = () => {
         title="ExamFit Blog - Study Tips, Exam Strategies & Success Stories"
         description="Read expert tips, study strategies, exam preparation guides, and success stories from toppers. Get the best advice for UPSC, SSC, Banking exams."
         keywords="exam tips blog, study strategies, UPSC preparation tips, SSC exam strategies, competitive exam blog, topper tips"
-        canonicalUrl="https://examfit.com/blog"
+        canonicalUrl="https://examfit.in/blog"
       />
       
       {/* Hero */}

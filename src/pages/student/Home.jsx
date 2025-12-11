@@ -51,7 +51,7 @@ const StudentHome = () => {
         "item": {
           "@type": "Course",
           "name": `${board.name} Exam Preparation`,
-          "url": `https://examfit.com/exams?board=${board._id}`,
+          "url": `https://examfit.in/exams?board=${board._id}`,
           "description": `Prepare for ${board.name} competitive exam with free practice tests and study materials`
         }
       }))
@@ -73,7 +73,7 @@ const StudentHome = () => {
         title="ExamFit - Free Online Exam Preparation | UPSC, SSC, Banking & More"
         description="Prepare for competitive exams like UPSC, SSC, Banking, Railways with free practice tests, study materials, current affairs & expert explanations. Start your success journey today!"
         keywords="exam preparation, UPSC preparation, SSC exam, competitive exams, free mock tests, study material, current affairs, online learning, government exams, bank exam preparation, IAS preparation, civil services exam, railway exam, defense exam"
-        canonicalUrl="https://examfit.com/"
+        canonicalUrl="https://examfit.in/"
         structuredData={homeStructuredData}
       />
       

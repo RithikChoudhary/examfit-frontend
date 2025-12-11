@@ -27,7 +27,7 @@ const About = () => {
         title="About ExamFit - Free Online Exam Preparation Platform | Our Mission"
         description="Learn about ExamFit's mission to empower students with free, high-quality exam preparation resources. Discover our story, team, and commitment to your success."
         keywords="about examfit, exam preparation platform, free online learning, education mission, student success"
-        canonicalUrl="https://examfit.com/about"
+        canonicalUrl="https://examfit.in/about"
       />
       
       {/* Hero */}

@@ -33,7 +33,7 @@ const Contact = () => {
         title="Contact ExamFit - Get Help & Support | Reach Out to Us"
         description="Have questions about ExamFit? Contact our support team for help with exam preparation, technical issues, or feedback. We're here to help you succeed!"
         keywords="contact examfit, exam preparation help, customer support, feedback, technical support"
-        canonicalUrl="https://examfit.com/contact"
+        canonicalUrl="https://examfit.in/contact"
       />
       
       {/* Hero */}

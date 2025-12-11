@@ -1,5 +1,5 @@
 # robots.txt for ExamFit
-# https://examfit.com
+# https://examfit.in
 # Last updated: 2025-12-06
 
 # Default rules for all crawlers
@@ -77,8 +77,8 @@ User-agent: DotBot
 Disallow: /
 
 # Sitemap location
-Sitemap: https://examfit.com/sitemap.xml
+Sitemap: https://examfit.in/sitemap.xml
 
 # Host directive (helps with canonicalization)
-Host: https://examfit.com
+Host: https://examfit.in
 

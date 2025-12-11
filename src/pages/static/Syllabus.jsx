@@ -43,7 +43,7 @@ const Syllabus = () => {
         title="Exam Syllabus 2024 - UPSC, SSC, Banking Pattern & Topics | ExamFit"
         description="Get complete syllabus and exam pattern for UPSC, SSC CGL, Banking (IBPS PO/Clerk). Download detailed topic-wise syllabus PDF for all competitive exams."
         keywords="exam syllabus 2024, UPSC syllabus, SSC CGL syllabus, banking exam syllabus, IBPS PO syllabus, exam pattern, topic wise syllabus"
-        canonicalUrl="https://examfit.com/syllabus"
+        canonicalUrl="https://examfit.in/syllabus"
       />
       
       {/* Hero */}

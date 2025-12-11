@@ -164,7 +164,7 @@ const CurrentAffairs = () => {
         title="Daily Current Affairs 2024 - UPSC, SSC, Banking | ExamFit"
         description="Stay updated with daily current affairs for UPSC, SSC, Banking exams. Get the latest news, events, and important updates for competitive exam preparation."
         keywords="current affairs 2024, daily current affairs, UPSC current affairs, SSC current affairs, banking current affairs, GK updates"
-        canonicalUrl="https://examfit.com/current-affairs"
+        canonicalUrl="https://examfit.in/current-affairs"
       />
       
       {/* Header */}

@@ -34,7 +34,7 @@ const StudyMaterial = () => {
         title="Free Study Material PDF - UPSC, SSC, Banking Notes | ExamFit"
         description="Download free study material, notes, and PDF guides for UPSC, SSC, Banking exams. Comprehensive study resources prepared by experts."
         keywords="free study material, UPSC notes PDF, SSC study material, banking exam notes, free PDF download, exam preparation notes"
-        canonicalUrl="https://examfit.com/study-material"
+        canonicalUrl="https://examfit.in/study-material"
       />
       
       {/* Hero */}

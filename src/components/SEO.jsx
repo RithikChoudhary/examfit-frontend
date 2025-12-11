@@ -5,7 +5,7 @@ const SEO = ({
   description = 'Prepare for UPSC, SSC, Banking & other competitive exams with free practice tests, study materials, current affairs & expert guidance. Join thousands of successful students.',
   keywords = 'exam preparation, UPSC preparation, SSC exam, competitive exams, free mock tests, study material, current affairs, online learning',
   canonicalUrl = '',
-  ogImage = 'https://examfit.com/og-image.png',
+  ogImage = 'https://examfit.in/og-image.png',
   ogType = 'website',
   ogUrl = '',
   structuredData = null,
@@ -17,7 +17,7 @@ const SEO = ({
     document.title = title;
 
     // Get base URL
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://examfit.com';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://examfit.in';
     const fullCanonicalUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : baseUrl);
     const fullOgUrl = ogUrl || fullCanonicalUrl;
     const fullOgImage = ogImage.startsWith('http') ? ogImage : `${baseUrl}${ogImage}`;
@@ -152,8 +152,8 @@ export const getOrganizationSchema = () => ({
   "@type": "EducationalOrganization",
   "name": "ExamFit",
   "description": "Free online exam preparation platform for competitive exams in India",
-  "url": "https://examfit.com",
-  "logo": "https://examfit.com/logo.png",
+  "url": "https://examfit.in",
+  "logo": "https://examfit.in/logo.png",
   "sameAs": [
     "https://facebook.com/examfit",
     "https://twitter.com/examfit",
@@ -172,14 +172,14 @@ export const getWebsiteSchema = () => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
   "name": "ExamFit",
-  "url": "https://examfit.com",
+  "url": "https://examfit.in",
   "description": "Free online exam preparation platform for competitive exams in India",
   "inLanguage": "en-IN",
   "potentialAction": {
     "@type": "SearchAction",
     "target": {
       "@type": "EntryPoint",
-      "urlTemplate": "https://examfit.com/search?q={search_term_string}"
+      "urlTemplate": "https://examfit.in/search?q={search_term_string}"
     },
     "query-input": "required name=search_term_string"
   }
@@ -263,8 +263,8 @@ export const getLocalBusinessSchema = () => ({
   "@context": "https://schema.org",
   "@type": "EducationalOrganization",
   "name": "ExamFit",
-  "image": "https://examfit.com/logo.png",
-  "url": "https://examfit.com",
+  "image": "https://examfit.in/logo.png",
+  "url": "https://examfit.in",
   "telephone": "+91-98765-43210",
   "address": {
     "@type": "PostalAddress",
