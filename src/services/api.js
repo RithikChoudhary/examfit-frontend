@@ -3,7 +3,16 @@ import { logApiError } from '../utils/errorLogger';
 
 // Use shared API URL utility
 import { getApiBaseUrl } from '../utils/apiConfig';
+
+// Get API base URL - this is called at module load time (runtime in browser)
+// The function checks hostname dynamically, so it will work correctly
 const API_BASE_URL = getApiBaseUrl();
+
+// Debug: Log the detected API URL (only once, at module load)
+if (typeof window !== 'undefined') {
+  console.log('[API Config] Detected hostname:', window.location.hostname);
+  console.log('[API Config] Using API Base URL:', API_BASE_URL);
+}
 
 // Log API base URL on initialization (only in development)
 if (!import.meta.env.PROD && typeof window !== 'undefined') {
