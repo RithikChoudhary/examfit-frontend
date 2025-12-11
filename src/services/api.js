@@ -1,19 +1,8 @@
 import axios from 'axios';
 import { logApiError } from '../utils/errorLogger';
 
-// Determine API base URL based on environment
-// In production, this should be set via VITE_API_BASE_URL environment variable
-// For local development, it defaults to localhost
-const getApiBaseUrl = () => {
-  // Check if we're in production (deployed)
-  if (import.meta.env.PROD) {
-    // In production, use the environment variable or default to production backend
-    return import.meta.env.VITE_API_BASE_URL || 'https://backend.examfit.in/api';
-  }
-  // In development, use environment variable or default to localhost
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api';
-};
-
+// Use shared API URL utility
+import { getApiBaseUrl } from '../utils/apiConfig';
 const API_BASE_URL = getApiBaseUrl();
 
 // Log API base URL on initialization

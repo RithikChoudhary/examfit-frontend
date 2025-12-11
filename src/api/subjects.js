@@ -1,16 +1,7 @@
 import axios from 'axios';
 
-// Use the same logic as the main api.js to determine the base URL
-const getApiBaseUrl = () => {
-  // Check if we're in production (deployed)
-  if (import.meta.env.PROD) {
-    // In production, use the environment variable or default to production backend
-    return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://backend.examfit.in/api';
-  }
-  // In development, use environment variable or default to localhost
-  return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-};
-
+// Use shared API URL utility
+import { getApiBaseUrl } from '../utils/apiConfig';
 const API_URL = getApiBaseUrl();
 
 const api = axios.create({

@@ -26,12 +26,40 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // Disable sourcemaps in production for smaller bundle
+    sourcemap: process.env.GENERATE_SOURCEMAP === 'true', // Only generate if explicitly requested
     cssCodeSplit: true, // Split CSS into separate files
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
+        manualChunks: (id) => {
+          // Vendor chunks
+          if (id.includes('node_modules')) {
+            // React core
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'vendor-react';
+            }
+            // Other large dependencies
+            if (id.includes('axios')) {
+              return 'vendor-axios';
+            }
+            // All other node_modules
+            return 'vendor';
+          }
+          // Split admin pages (not needed on initial load)
+          if (id.includes('/admin/')) {
+            return 'admin';
+          }
+          // Split auth pages
+          if (id.includes('/auth/')) {
+            return 'auth';
+          }
+          // Split student pages
+          if (id.includes('/student/')) {
+            return 'student';
+          }
+          // Split static pages
+          if (id.includes('/static/')) {
+            return 'static';
+          }
         },
         // Optimize asset file names for better caching
         assetFileNames: (assetInfo) => {

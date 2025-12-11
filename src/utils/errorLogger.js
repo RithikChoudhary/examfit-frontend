@@ -3,8 +3,9 @@
  * Logs all frontend errors with detailed information
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD ? 'https://backend.examfit.in/api' : 'http://localhost:4000/api');
+// Use shared API URL utility
+import { getApiBaseUrl } from './apiConfig';
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Log error with detailed information

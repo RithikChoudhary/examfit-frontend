@@ -12,13 +12,8 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 
-// Use environment-aware API URL
-const getApiBaseUrl = () => {
-  if (import.meta.env.PROD) {
-    return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://backend.examfit.in/api';
-  }
-  return import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-};
+// Use shared API URL utility
+import { getApiBaseUrl } from '../../../utils/apiConfig';
 const API_URL = getApiBaseUrl();
 
 const AdminDashboard = () => {
