@@ -148,7 +148,7 @@ const StudentHome = () => {
                               src="/upsc.webp" 
                               alt="UPSC Logo" 
                               className="board-item-logo"
-                              loading="lazy"
+                              fetchPriority="high"
                               width="48"
                               height="48"
                             />
