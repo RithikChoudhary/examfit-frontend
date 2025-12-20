@@ -123,19 +123,60 @@ const AdminQuestions = () => {
   const handleOpenModal = (question = null) => {
     if (question) {
       setEditingQuestion(question);
+      
+      // Debug: Log the raw question object first
+      console.log('[handleOpenModal] Raw question object:', {
+        _id: question._id,
+        hasCorrectIndex: 'correctIndex' in question,
+        correctIndex: question.correctIndex,
+        correctIndexType: typeof question.correctIndex,
+        options: question.options,
+        optionsLength: question.options?.length,
+      });
+      
       // Ensure correctIndex is a number (could be string from DB or undefined)
-      const correctIdx = question.correctIndex !== undefined && question.correctIndex !== null 
-        ? Number(question.correctIndex) 
-        : 0;
+      // Use strict check - only default to 0 if it's actually undefined/null
+      let correctIdx = 0;
+      if (question.correctIndex !== undefined && question.correctIndex !== null) {
+        correctIdx = parseInt(question.correctIndex, 10);
+        // Ensure it's a valid number and within range
+        if (isNaN(correctIdx) || correctIdx < 0) {
+          console.warn('[handleOpenModal] Invalid correctIndex, defaulting to 0:', question.correctIndex);
+          correctIdx = 0;
+        }
+      } else {
+        console.warn('[handleOpenModal] correctIndex is undefined/null, defaulting to 0');
+      }
+      
       // Ensure options have media field
-      const optionsWithMedia = (question.options || [{ text: '' }, { text: '' }, { text: '' }, { text: '' }]).map(opt => ({
+      const optionsWithMedia = (question.options || []).map(opt => ({
         text: opt.text || '',
         media: opt.media || '',
       }));
-      // Pad to 4 options if needed
+      
+      // Pad to 4 options if needed (padding at the end, so correctIndex remains valid)
       while (optionsWithMedia.length < 4) {
         optionsWithMedia.push({ text: '', media: '' });
       }
+      
+      // Ensure correctIndex is within bounds of the actual options (before padding)
+      const originalOptionsCount = question.options?.length || 0;
+      if (correctIdx >= originalOptionsCount && originalOptionsCount > 0) {
+        console.warn(`[handleOpenModal] correctIndex ${correctIdx} is out of bounds (options count: ${originalOptionsCount}), clamping to ${originalOptionsCount - 1}`);
+        correctIdx = Math.min(correctIdx, originalOptionsCount - 1);
+      }
+      
+      // Debug logging
+      console.log('[handleOpenModal] Processed data:', {
+        questionId: question._id,
+        correctIndexFromDB: question.correctIndex,
+        correctIndexProcessed: correctIdx,
+        originalOptionsCount: originalOptionsCount,
+        optionsAfterPadding: optionsWithMedia.length,
+        options: optionsWithMedia.map((opt, idx) => `${idx}: "${opt.text?.substring(0, 30)}"`),
+        correctOptionText: optionsWithMedia[correctIdx]?.text?.substring(0, 50),
+      });
+      
       setFormData({
         text: question.text,
         options: optionsWithMedia,
@@ -149,6 +190,8 @@ const AdminQuestions = () => {
         status: question.status || 'published',
         media: question.media || [],
       });
+      
+      console.log('[handleOpenModal] FormData set with correctIndex:', correctIdx);
     } else {
       setEditingQuestion(null);
       setFormData({
@@ -167,6 +210,13 @@ const AdminQuestions = () => {
     }
     setIsModalOpen(true);
   };
+
+  // Debug: Log formData changes, especially correctIndex
+  useEffect(() => {
+    if (isModalOpen && editingQuestion) {
+      console.log('[useEffect] FormData correctIndex:', formData.correctIndex, 'Type:', typeof formData.correctIndex);
+    }
+  }, [formData.correctIndex, isModalOpen, editingQuestion]);
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -358,6 +408,14 @@ const AdminQuestions = () => {
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
           parsedData = XLSX.utils.sheet_to_json(worksheet).filter(row => row.Question || row.question || row.text);
+          
+          // Debug: Log first row to see actual column names
+          if (parsedData.length > 0) {
+            console.log('Excel file parsed. First row keys:', Object.keys(parsedData[0]));
+            console.log('First row data:', parsedData[0]);
+            console.log('Sample correct answer value:', parsedData[0]['Correct Answer'], 'Type:', typeof parsedData[0]['Correct Answer']);
+          }
+          
           setBulkData(parsedData);
         }
       } catch (error) {
@@ -386,31 +444,180 @@ const AdminQuestions = () => {
 
     try {
       const headers = getAuthHeaders();
-      const questionsToUpload = bulkData.map((row) => ({
-        text: row.Question || row.question || row.text || '',
-        options: [
-          { text: row['Option 1'] || row.option1 || '' },
-          { text: row['Option 2'] || row.option2 || '' },
-          { text: row['Option 3'] || row.option3 || '' },
-          { text: row['Option 4'] || row.option4 || '' },
-        ],
-        correctIndex: parseInt(row['Correct Answer'] || row.correctAnswer || row.correctIndex || '0') - 1,
-        explanation: row.Explanation || row.explanation || '',
-        questionPaper: selectedQuestionPaper,
-        subject: selectedSubject,
-        exam: selectedExam,
-        difficulty: row.Difficulty || row.difficulty || 'medium',
-        status: 'published',
-      }));
+      const questionsToUpload = bulkData
+        .map((row, index) => {
+          const questionText = String(row.Question || row.question || row.text || '').trim();
+          
+          // Get all 4 options as strings
+          const option1Text = String(row['Option 1'] || row.option1 || row['Option1'] || '').trim();
+          const option2Text = String(row['Option 2'] || row.option2 || row['Option2'] || '').trim();
+          const option3Text = String(row['Option 3'] || row.option3 || row['Option3'] || '').trim();
+          const option4Text = String(row['Option 4'] || row.option4 || row['Option4'] || '').trim();
+          
+          // Store all options with their original positions (0-3)
+          const allOptionsWithIndex = [
+            { text: option1Text, originalPos: 1 },
+            { text: option2Text, originalPos: 2 },
+            { text: option3Text, originalPos: 3 },
+            { text: option4Text, originalPos: 4 },
+          ];
+          
+          // Parse correct answer from Excel (typically 1-4, meaning Option 1-4)
+          // Try all possible column name variations
+          const correctAnswerValue = 
+            row['Correct Answer'] !== undefined ? row['Correct Answer'] :
+            row['CorrectAnswer'] !== undefined ? row['CorrectAnswer'] :
+            row.correctAnswer !== undefined ? row.correctAnswer :
+            row['Correct'] !== undefined ? row['Correct'] :
+            row.correct !== undefined ? row.correct :
+            row.correctIndex !== undefined ? row.correctIndex :
+            row['Correct Index'] !== undefined ? row['Correct Index'] :
+            row['Answer'] !== undefined ? row['Answer'] :
+            row.answer !== undefined ? row.answer :
+            null;
+          
+          // Convert to string and parse - handle both string and number from Excel
+          let correctAnswerNum;
+          let correctAnswerStr = ''; // For debug logging
+          
+          if (correctAnswerValue === null || correctAnswerValue === undefined) {
+            console.warn(`Question ${index + 1}: No correct answer found, defaulting to 1`);
+            correctAnswerNum = 1;
+            correctAnswerStr = '1 (default)';
+          } else if (typeof correctAnswerValue === 'number') {
+            // Excel might return it as a number directly
+            correctAnswerNum = correctAnswerValue;
+            correctAnswerStr = String(correctAnswerValue);
+          } else {
+            // It's a string, parse it
+            correctAnswerStr = String(correctAnswerValue).trim();
+            correctAnswerNum = parseInt(correctAnswerStr);
+            
+            // If not a valid number 1-4, try parsing as letter (A-D)
+            if (isNaN(correctAnswerNum) || correctAnswerNum < 1 || correctAnswerNum > 4) {
+              const upper = correctAnswerStr.toUpperCase();
+              if (upper === 'A') correctAnswerNum = 1;
+              else if (upper === 'B') correctAnswerNum = 2;
+              else if (upper === 'C') correctAnswerNum = 3;
+              else if (upper === 'D') correctAnswerNum = 4;
+              else {
+                console.warn(`Question ${index + 1}: Invalid correct answer "${correctAnswerStr}", defaulting to 1`);
+                correctAnswerNum = 1;
+              }
+            }
+          }
+          
+          // Ensure it's 1-4
+          if (correctAnswerNum < 1 || correctAnswerNum > 4) {
+            console.warn(`Question ${index + 1}: Correct answer out of range: ${correctAnswerNum}, defaulting to 1`);
+            correctAnswerNum = 1;
+          }
+          
+          // Debug first 3 rows
+          if (index < 3) {
+            console.log(`\n=== Row ${index + 1} Debug ===`);
+            console.log('Correct Answer column value:', correctAnswerValue, 'Type:', typeof correctAnswerValue);
+            console.log('Parsed correct answer number:', correctAnswerNum, '(from "' + correctAnswerStr + '")');
+            console.log('Option texts:', {
+              opt1: option1Text.substring(0, 20),
+              opt2: option2Text.substring(0, 20),
+              opt3: option3Text.substring(0, 20),
+              opt4: option4Text.substring(0, 20),
+            });
+          }
+          
+          // Get the text of the correct option (1-4, convert to 0-3 for array index)
+          const correctOptionIndex = correctAnswerNum - 1; // Convert 1-4 to 0-3
+          const correctOptionText = allOptionsWithIndex[correctOptionIndex]?.text || '';
+          
+          // Debug first 3 rows
+          if (index < 3) {
+            console.log(`Correct option index: ${correctOptionIndex}, text: "${correctOptionText}"`);
+          }
+          
+          // Filter out empty options and build final options array
+          const validOptions = allOptionsWithIndex.filter(opt => opt.text && opt.text !== '');
+          
+          // Find the index of the correct option in the filtered array
+          // First try to match by originalPos (most reliable)
+          let correctIndex = validOptions.findIndex(opt => opt.originalPos === correctAnswerNum);
+          
+          // If not found by originalPos, try matching by text (trimmed for safety)
+          if (correctIndex < 0 && correctOptionText) {
+            correctIndex = validOptions.findIndex(opt => opt.text.trim() === correctOptionText.trim());
+          }
+          
+          // Debug first 3 rows
+          if (index < 3) {
+            console.log(`Valid options count: ${validOptions.length}`);
+            console.log(`Looking for correct answer: ${correctAnswerNum} (originalPos)`);
+            console.log(`Correct option text: "${correctOptionText}"`);
+            console.log(`Found correct index in filtered array: ${correctIndex}`);
+            if (correctIndex >= 0) {
+              console.log(`✓ Matched! Final correctIndex: ${correctIndex}, option text: "${validOptions[correctIndex].text}"`);
+            } else {
+              console.log(`✗ NOT FOUND - will default to 0`);
+            }
+          }
+          
+          // If correct option text was empty or not found, default to first option
+          if (correctIndex < 0 || !correctOptionText) {
+            console.warn(`Question ${index + 1}: Correct answer "${correctAnswerNum}" (Option ${correctAnswerNum}) not found in filtered options. Text was: "${correctOptionText}". Defaulting to first option.`);
+            correctIndex = 0;
+          }
+          
+          // Final options array (just text, no metadata)
+          const options = validOptions.map(opt => ({ text: opt.text }));
+          
+          // Ensure correctIndex is a number (not string)
+          const finalCorrectIndex = Number(correctIndex);
+          
+          return {
+            text: questionText,
+            options: options,
+            correctIndex: finalCorrectIndex, // Ensure it's a number
+            explanation: String(row.Explanation || row.explanation || '').trim(),
+            questionPaper: selectedQuestionPaper,
+            subject: selectedSubject,
+            exam: selectedExam,
+            difficulty: String(row.Difficulty || row.difficulty || 'medium').toLowerCase(),
+            status: 'published',
+          };
+        })
+        .filter(q => q.text && q.text !== '' && q.options.length >= 2); // Only keep valid questions
+      
+      if (questionsToUpload.length === 0) {
+        toast.error('No valid questions found in file. Please check the file format.');
+        return;
+      }
+      
+      // Debug log for first few questions - show what we're actually sending
+      console.log('\n=== READY TO UPLOAD ===');
+      console.log(`Total questions: ${questionsToUpload.length}`);
+      questionsToUpload.slice(0, 5).forEach((q, idx) => {
+        console.log(`\nQuestion ${idx + 1}:`, {
+          text: q.text?.substring(0, 60),
+          optionsCount: q.options?.length,
+          correctIndex: q.correctIndex,
+          options: q.options?.map((opt, i) => `${i}: "${opt.text?.substring(0, 25)}"`),
+          correctOption: `Option ${q.correctIndex}: "${q.options[q.correctIndex]?.text?.substring(0, 40)}"`,
+        });
+      });
 
-      await axios.post(`${API_URL}/questions/bulk`, { 
+      const response = await axios.post(`${API_URL}/questions/bulk`, { 
         questions: questionsToUpload,
         exam: selectedExam,
         subject: selectedSubject,
         questionPaper: selectedQuestionPaper
       }, { headers });
       
-      toast.success(`${questionsToUpload.length} questions uploaded successfully`);
+      // Check if there were any errors in the response
+      if (response.data.errors && response.data.errors.length > 0) {
+        console.warn('Some questions had errors:', response.data.errors);
+        toast.error(`Uploaded ${response.data.saved} questions, but ${response.data.errors.length} had errors. Check console for details.`);
+      } else {
+        toast.success(response.data.message || `${response.data.saved} questions uploaded successfully`);
+      }
       setIsBulkModalOpen(false);
       setBulkFile(null);
       setBulkData([]);
@@ -420,7 +627,13 @@ const AdminQuestions = () => {
       }
     } catch (error) {
       console.error('Error uploading questions:', error);
-      toast.error(error.response?.data?.message || 'Failed to upload questions');
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Failed to upload questions';
+      toast.error(errorMessage);
+      
+      // Log full error details for debugging
+      if (error.response?.data) {
+        console.error('Backend error details:', error.response.data);
+      }
     }
   };
 
@@ -896,14 +1109,20 @@ const AdminQuestions = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Options *</label>
                 <div className="space-y-4">
-                  {formData.options.map((option, index) => (
+                  {formData.options.map((option, index) => {
+                    // Ensure both values are numbers for comparison
+                    const isChecked = Number(formData.correctIndex) === Number(index);
+                    return (
                     <div key={index} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                       <div className="flex items-center gap-3 mb-3">
                       <input
                         type="radio"
                         name="correctAnswer"
-                        checked={Number(formData.correctIndex) === Number(index)}
-                        onChange={() => setFormData({ ...formData, correctIndex: Number(index) })}
+                        checked={isChecked}
+                        onChange={() => {
+                          console.log(`[Radio] Changing correctIndex from ${formData.correctIndex} to ${index}`);
+                          setFormData({ ...formData, correctIndex: Number(index) });
+                        }}
                         className="w-5 h-5 text-indigo-600"
                       />
                       <span className="text-sm font-medium text-gray-600 w-8">{String.fromCharCode(65 + index)}.</span>
@@ -966,7 +1185,8 @@ const AdminQuestions = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 
