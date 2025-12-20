@@ -193,7 +193,19 @@ const StudentResults = () => {
           </div>
           
           <div className="space-y-6">
-            {result.results.map((item, idx) => (
+            {result.results.map((item, idx) => {
+              // Debug: Log first few questions to verify userAnswer values
+              if (idx < 3) {
+                console.log(`[Results] Question ${idx + 1}:`, {
+                  questionId: item.questionId,
+                  userAnswer: item.userAnswer,
+                  userAnswerType: typeof item.userAnswer,
+                  correctAnswer: item.correctAnswer,
+                  isCorrect: item.isCorrect,
+                });
+              }
+              
+              return (
               <div key={idx} className="bg-white rounded-2xl border-[3px] border-blue-600 shadow-md overflow-hidden">
                 <div className="p-6">
                   <div className="flex items-start gap-3 mb-5">
@@ -225,12 +237,20 @@ const StudentResults = () => {
                   {/* Options */}
                   <div className="space-y-2.5">
                     {item.question.options.map((option, optionIdx) => {
-                      // Use Number() for consistent comparison
-                      const userAnswer = Number(item.userAnswer);
+                      // Handle userAnswer - can be null/undefined for unanswered questions
+                      const userAnswer = item.userAnswer !== null && item.userAnswer !== undefined 
+                        ? Number(item.userAnswer) 
+                        : null;
                       const correctAnswer = Number(item.correctAnswer);
-                      const isSelected = userAnswer === optionIdx;
+                      
+                      // Only mark as selected if user actually answered and it matches this option
+                      const isSelected = userAnswer !== null && userAnswer === optionIdx;
                       const isCorrectOption = optionIdx === correctAnswer;
                       
+                      // Determine styling:
+                      // - Green if it's the correct answer
+                      // - Pink if it's the user's wrong answer
+                      // - Default gray otherwise
                       let optionClasses = 'bg-gray-100 border-gray-300';
                       
                       if (isCorrectOption) {
@@ -286,7 +306,8 @@ const StudentResults = () => {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
